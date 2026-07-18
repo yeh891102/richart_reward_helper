@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#e7333f" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <title>Richart 今日最佳方案</title>
+  <style>
+    :root{--red:#e7333f;--ink:#252b33;--muted:#747b83;--bg:#f6f7f9;--card:#fff;--line:#e8eaed;--green:#16845b}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--ink)}
+    header{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+    h1{font-size:20px;margin:0} .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    main{max-width:760px;margin:auto;padding:16px 14px calc(40px + env(safe-area-inset-bottom))}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.025)}
+    h2{font-size:17px;margin:0 0 12px} label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+    input,select,textarea,button{font:inherit} input,select,textarea{width:100%;border:1px solid #d9dde2;border-radius:12px;padding:12px;background:#fff;color:var(--ink)}
+    textarea{min-height:110px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1.2fr .8fr .8fr;gap:8px}
+    button{border:0;border-radius:12px;padding:12px 14px;font-weight:650;cursor:pointer}.primary{background:var(--red);color:#fff}.secondary{background:#eef0f3;color:var(--ink)}.ghost{background:#fff;border:1px solid var(--line)}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.small{font-size:12px;color:var(--muted)}
+    .tx{border:1px solid var(--line);border-radius:14px;padding:12px;margin:9px 0}.tx-head{display:flex;justify-content:space-between;gap:10px}.tx-title{font-weight:700}.amount{font-variant-numeric:tabular-nums}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f0f1f4;font-size:11px;color:#555;margin:4px 4px 0 0}
+    .best{border:2px solid var(--red);background:#fff8f8}.best h2{color:var(--red)}.rank{display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.rank:last-child{border:0}.pts{font-weight:750}.ok{color:var(--green)}.warn{color:#a76500}.danger{color:var(--red)}
+    details{margin-top:10px} summary{cursor:pointer;font-weight:650}.hidden{display:none!important}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}
+    .notice{font-size:12px;line-height:1.5;color:var(--muted);background:#fafafa;border-radius:12px;padding:10px}.footer{text-align:center;color:var(--muted);font-size:11px;margin-top:20px}
+    @media(max-width:560px){.grid,.grid3{grid-template-columns:1fr}.desktop-only{display:none}}
+  </style>
+</head>
+<body>
+<header><h1>Richart 今日最佳方案</h1><div class="sub">資料只存在你的瀏覽器；不需登入、不上傳銀行資料</div></header>
+<main>
+  <section class="card">
+    <h2>1. 匯入今日消費</h2>
+    <div class="grid">
+      <div><label>消費日期</label><input id="date" type="date"></div>
+      <div><label>今日是否為假日</label><select id="holiday"><option value="auto">自動判斷</option><option value="yes">是</option><option value="no">否</option></select></div>
+    </div>
+    <label>Richart Life 截圖</label>
+    <input id="imageInput" type="file" accept="image/*" multiple>
+    <div class="row" style="margin-top:8px"><button class="secondary" id="ocrBtn">辨識截圖（裝置端 OCR）</button><button class="ghost" id="pasteBtn">貼上辨識文字</button></div>
+    <div id="ocrStatus" class="small" style="margin-top:8px"></div>
+    <details><summary>無法辨識時：貼上 iPhone「原況文字」</summary><textarea id="rawText" placeholder="在照片中長按文字 → 全選 → 複製，再貼到這裡"></textarea><button class="secondary" id="parseBtn">解析文字</button></details>
+  </section>
+
+  <section class="card">
+    <h2>2. 手動新增／確認交易</h2>
+    <div class="grid3">
+      <div><label>店家</label><input id="merchant" placeholder="例如：台灣高速鐵路"></div>
+      <div><label>金額</label><input id="amount" type="number" step="1" placeholder="1160"></div>
+      <div><label>付款方式</label><select id="payment"><option>實體卡／線上刷卡</option><option>Apple Pay</option><option>LINE Pay</option><option>台新Pay</option><option>全盈+Pay</option><option>全支付</option><option>街口支付</option><option>其他</option></select></div>
+    </div>
+    <div class="grid">
+      <div><label>分類</label><select id="category"></select></div>
+      <div><label>交易地</label><select id="region"><option value="tw">台灣／新台幣</option><option value="overseas">海外或外幣</option></select></div>
+    </div>
+    <div class="check" style="margin:10px 0"><input id="installment" type="checkbox"><label for="installment" style="margin:0">特店分期／0利率分期（通常不回饋）</label></div>
+    <button class="primary" id="addBtn">新增交易</button>
+    <div id="txList" style="margin-top:12px"></div>
+  </section>
+
+  <section class="card">
+    <div class="row"><button class="primary" id="calcBtn">計算最佳方案</button><button class="secondary" id="clearBtn">清空今日資料</button></div>
+  </section>
+
+  <section id="result" class="hidden"></section>
+
+  <section class="card">
+    <h2>設定</h2>
+    <div class="check"><input id="lineCoupon" type="checkbox" checked><label for="lineCoupon" style="margin:0">已領 LINE Pay 1.5% 加碼券（2026/7–9）</label></div>
+    <div class="check"><input id="lineBound" type="checkbox"><label for="lineBound" style="margin:0">已完成台新 LINE 官方帳號個人化綁定</label></div>
+    <div class="notice" style="margin-top:10px">未追蹤每月上限；LINE Pay 券以「尚有額度」估算。程式採逐筆無條件捨去，實際認列仍以台新銀行的特店代號、交易日與系統判定為準。</div>
+  </section>
+  <div class="footer">規則版本：2026/07/18｜適用權益期間 2026/07/01–2027/03/31；Chill刷至 2026/09/30</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+const CATS=[['auto','自動判斷'],['general','一般消費'],['restaurant','餐飲'],['delivery','外送'],['ticket','售票／娛樂'],['hotel','指定飯店'],['ktv','KTV'],['convenience','7-11／全家'],['grocery','量販／超市'],['rail','臺鐵／高鐵'],['taxi','計程車／叫車'],['fuel','加油／充電／停車'],['drugstore','藥妝／藥局'],['department','百貨／Outlet'],['home','居家裝修'],['fashion','服飾品牌'],['ecommerce','網購平台'],['course','線上課程'],['digital','遊戲／影音／AI'],['airline','航空'],['booking','訂房／旅遊平台'],['travelagency','旅行社'],['insurance','保費'],['chill10','Chill 10% 指定店'],['chill5','Chill 5% 指定店'],['chill33','Chill 3.3% 指定店'],['excluded','不回饋項目']];
+const $=s=>document.querySelector(s); const state={tx:[]};
+$('#category').innerHTML=CATS.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
+const today=new Date(); $('#date').value=today.toISOString().slice(0,10);
+
+const aliases={
+ restaurant:['KURA SUSHI','麥當勞','MCDONALD','珍煮丹','ZHENZHUDAN','海底撈','HAIDILAO','餐廳','SUSHI','FOOD'],
+ delivery:['UBER EATS','FOODPANDA'],
+ rail:['台灣高速鐵路','高速鐵路','THSR','高鐵','臺鐵','台鐵'],
+ taxi:['UBER*','UBER ','台灣大車隊','LINEGO','YOXI','BOLT'],
+ convenience:['統一超商','7-ELEVEN','7-11','全家便利','FAMILY MART','HI LIFE','萊爾富'],
+ drugstore:['POYA','寶雅','康是美','COSMED','屈臣氏','WATSONS','杏一','大樹藥局','丁丁藥局'],
+ grocery:['MIA C\'BON','全聯','PX MART','家樂福','萬家福','樂家康','大買家','唐吉訶德','DON DON DONKI','LOPIA'],
+ ecommerce:['樂購蝦皮','SHOPEE','蝦皮','MOMO','PCHOME','COUPANG','酷澎','淘寶','AMAZON','博客來','IHERB','SHEIN'],
+ ticket:['VIESHOW','威秀','拓元','KKTIX','OPENTIX','FUNNOW'],
+ fuel:['CPCCORPORATION','中油','全國加油','USPACE','AUTOPASS','停車場'],
+ digital:['NETFLIX','DISNEY+','STEAM','PLAYSTATION','NINTENDO','CHATGPT','NOTION','CANVA','CLAUDE','PERPLEXITY'],
+ booking:['AGODA','BOOKING.COM','TRIP.COM','AIRBNB','HOTELS.COM','EXPEDIA','KLOOK','KKDAY'],
+ airline:['中華航空','長榮航空','星宇航空','台灣虎航','國泰航空','華信航空','立榮航空','樂桃航空','阿聯酋航空','亞洲航空','酷航','捷星航空','新加坡航空','日本航空','越捷航空'],
+ insurance:['保險','人壽','產物保險'],
+ excluded:['中華電信','台灣大哥大','遠傳電信','公用事業','水費','電費','瓦斯費','國道通行費']
+};
+const chill10=['詹記麻辣火鍋','萬客什鍋','海底撈','屋馬燒肉','茶六燒肉堂','新村站著吃','燒肉政宗','碳佐麻里','雞湯大叔','GONNA','BRUN','CAFE ACME','THE ANTIPODEAN','貳樓','樂子 THE DINER','FAKE SOBER','DRAFT LAND','臺虎精釀','ABV','BAR TCRC','BAR HOME','PHOWA','MOONROCK','50嵐','得正','八曜和茶','五桐號','龜記','UG TEA','叮哥茶飲','CAFE!N','%ARABICA','COMPOSE COFFEE'];
+const chill5=['饗饗','INPARADISE','NAGOMI','WEVERSE','K-MONSTAR','微樂客','五大唱片','仙女樹','FANME','NOL','巴哈姆特','BOOK WALKER','ANIMATE','樂天KOBO','READMOO','讀墨','NETFLIX','DISNEY+','愛爾達','好好生醫','POPCARE','營養師輕食','VITABOX','MYPROTEIN','URMART','ANYTIME FITNESS','健身工廠','WORLD GYM','HYPERCORE','KX PILATES','虎鐵健身','17FIT','ADIDAS','NEW BALANCE','PUMA','ONITSUKA TIGER','NIKE','HOKA','SALOMON','LULULEMON'];
+const chill33=['APPLE','STUDIO A','DJI','INSTA360','GOPRO','蝦皮','SHOPEE','淘寶','酷澎','COUPANG','UBER EATS'];
+function norm(s){return (s||'').toUpperCase().replace(/\s+/g,' ').trim()}
+function inferCategory(m){const n=norm(m);if(chill10.some(x=>n.includes(norm(x))))return'chill10';if(chill5.some(x=>n.includes(norm(x))))return'chill5';if(chill33.some(x=>n.includes(norm(x))))return'chill33';for(const [cat,arr] of Object.entries(aliases))if(arr.some(x=>n.includes(norm(x))))return cat;return'general'}
+function inferPayment(m){const n=norm(m); if(n.includes('LINEPAY'))return'LINE Pay';if(n.includes('全支付'))return'全支付';if(n.includes('街口'))return'街口支付';if(n.includes('TS＊')||n.includes('TS*'))return'台新Pay';return'實體卡／線上刷卡'}
+function addTx(tx){tx.category=tx.category==='auto'?inferCategory(tx.merchant):tx.category;state.tx.push(tx);renderTx();save()}
+$('#addBtn').onclick=()=>{const merchant=$('#merchant').value.trim(),amount=Number($('#amount').value);if(!merchant||!Number.isFinite(amount))return alert('請輸入店家與金額');addTx({merchant,amount,payment:$('#payment').value,category:$('#category').value,region:$('#region').value,installment:$('#installment').checked});$('#merchant').value='';$('#amount').value=''};
+function renderTx(){const el=$('#txList');if(!state.tx.length){el.innerHTML='<div class="small">尚無交易</div>';return}el.innerHTML=state.tx.map((t,i)=>`<div class="tx"><div class="tx-head"><div><div class="tx-title">${esc(t.merchant)}</div><span class="pill">${catName(t.category)}</span><span class="pill">${esc(t.payment)}</span></div><div class="amount">NT$${fmt(t.amount)}</div></div><div class="row" style="margin-top:8px"><button class="ghost" onclick="editTx(${i})">編輯</button><button class="ghost danger" onclick="delTx(${i})">刪除</button></div></div>`).join('')}
+window.delTx=i=>{state.tx.splice(i,1);renderTx();save()};window.editTx=i=>{const t=state.tx[i];$('#merchant').value=t.merchant;$('#amount').value=t.amount;$('#payment').value=t.payment;$('#category').value=t.category;$('#region').value=t.region;$('#installment').checked=t.installment;state.tx.splice(i,1);renderTx();save();scrollTo({top:300,behavior:'smooth'})};
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function fmt(n){return Number(n).toLocaleString('zh-TW')}function catName(v){return (CATS.find(x=>x[0]===v)||['',v])[1]}
+
+function cleanOCRLine(s){
+  return String(s||'')
+    .replace(/[｜丨]/g,'|')
+    .replace(/[＄]/g,'$')
+    .replace(/，/g,',')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function isNoiseLine(line){
+  const n=norm(line);
+  return !line ||
+    /刷卡消費|即時消費|近 ?45 ?天|實際交易金額|信用卡消費折抵|消費及帳單為主|目前方案|權益方案/.test(line) ||
+    /^202\d[\/年-]\d{1,2}/.test(line) ||
+    /末 ?4 ?碼|可 ?分 ?期/.test(line) ||
+    /^(NT|NTS|NT\$)/i.test(line) ||
+    /^[>›〉〉vVyY]+$/.test(line) ||
+    /^\d{1,2}:\d{2}$/.test(line);
+}
+function extractAmount(line){
+  const normalized=cleanOCRLine(line).replace(/NTS/ig,'NT$').replace(/NT\s*\$/ig,'NT$');
+  const m=normalized.match(/NT\$\s*(-?\s*[\dOoIl,\.]+)/i);
+  if(!m)return null;
+  const digits=m[1]
+    .replace(/[Oo]/g,'0').replace(/[Il]/g,'1')
+    .replace(/[\s,\.]/g,'');
+  if(!/^-?\d+$/.test(digits))return null;
+  return Number(digits);
+}
+function merchantScore(line){
+  let score=line.length;
+  if(/[A-Za-z\u4e00-\u9fff]/.test(line))score+=20;
+  if(/股份有限公司|公司|CINEMAS|UBER|PAY|MART|SUSHI|POYA/i.test(line))score+=12;
+  if(/^\d+$/.test(line))score-=100;
+  return score;
+}
+function finalizeOCRBlock(block,targetMD,out){
+  if(!block || block.date!==targetMD)return;
+  let amount=null;
+  for(const line of block.lines){
+    const a=extractAmount(line);
+    if(a!==null){amount=a;break;}
+  }
+  const candidates=block.lines
+    .map(cleanOCRLine)
+    .filter(line=>!isNoiseLine(line) && extractAmount(line)===null)
+    .map(line=>line
+      .replace(/^\d{2}\/\d{2}\s*[|,]?\s*/,'')
+      .replace(/末\s*4\s*碼\s*\d{4}/g,'')
+      .replace(/可\s*分\s*期/gi,'')
+      .replace(/[>›〉〉]+$/,'')
+      .trim())
+    .filter(line=>line.length>=2 && !/^\d{2}\/\d{2}$/.test(line));
+  candidates.sort((a,b)=>merchantScore(b)-merchantScore(a));
+  const merchant=candidates[0];
+  if(merchant && amount!==null){
+    out.push({merchant,amount,payment:inferPayment(merchant),category:inferCategory(merchant),region:'tw',installment:false});
+  }
+}
+function parseOCR(text){
+  const date=$('#date').value;
+  const md=date.slice(5).replace('-','/');
+  const lines=String(text||'').split(/\r?\n/).map(cleanOCRLine).filter(Boolean);
+  const out=[];
+  let block=null;
+
+  for(const line of lines){
+    const dm=line.match(/(?:^|\D)(\d{2}\/\d{2})(?:\D|$)/);
+    if(dm){
+      finalizeOCRBlock(block,md,out);
+      block={date:dm[1],lines:[line]};
+    }else if(block){
+      block.lines.push(line);
+    }
+  }
+  finalizeOCRBlock(block,md,out);
+
+  if(!out.length){
+    alert(`沒有解析到 ${md} 的交易。請展開「原況文字」查看辨識內容，或改用手動新增。`);
+    return;
+  }
+  out.forEach(addTx);
+  alert(`已加入 ${out.length} 筆 ${md} 交易，請確認店家、分類與付款方式。`);
+}
+$('#parseBtn').onclick=()=>parseOCR($('#rawText').value);
+$('#pasteBtn').onclick=async()=>{try{$('#rawText').value=await navigator.clipboard.readText();parseOCR($('#rawText').value)}catch(e){alert('瀏覽器無法直接讀取剪貼簿，請展開下方文字框後手動貼上。')}};
+$('#ocrBtn').onclick=async()=>{const files=[...$('#imageInput').files];if(!files.length)return alert('請先選擇截圖');if(!window.Tesseract)return alert('OCR 元件尚未載入，請確認網路後重試');let all='';$('#ocrStatus').textContent='正在下載辨識模型並處理，第一次可能需要較久…';try{for(let i=0;i<files.length;i++){const r=await Tesseract.recognize(files[i],'chi_tra+eng',{logger:m=>{$('#ocrStatus').textContent=`第 ${i+1}/${files.length} 張：${m.status} ${m.progress?Math.round(m.progress*100)+'%':''}`}});all+='\n'+r.data.text}$('#rawText').value=all;parseOCR(all);$('#ocrStatus').textContent='辨識完成'}catch(e){console.error(e);$('#ocrStatus').textContent='辨識失敗，請改用 iPhone 原況文字複製貼上。'}};
+
+const baseEligible=p=>['實體卡／線上刷卡','Apple Pay','台新Pay'].includes(p);
+const lineEligibleScheme=(p,scheme)=>p==='LINE Pay'&&['Chill刷','Pay著刷','假日刷'].includes(scheme);
+const allYingEligible=(p,scheme)=>p==='全盈+Pay'&&['Pay著刷','假日刷'].includes(scheme);
+function eligiblePayment(t,scheme){return baseEligible(t.payment)||lineEligibleScheme(t.payment,scheme)||allYingEligible(t.payment,scheme)}
+function isExcluded(t){return t.category==='excluded'||['全支付','街口支付','其他'].includes(t.payment)||t.installment}
+function generalRate(t){if(isExcluded(t))return 0;if(t.category==='insurance')return .013;if(t.category==='convenience')return 0;return .003}
+function floorPoint(a,r){return Math.floor(Math.abs(a)*r)*Math.sign(a)}
+function isHoliday(){const v=$('#holiday').value;if(v==='yes')return true;if(v==='no')return false;const d=new Date($('#date').value+'T12:00:00');return d.getDay()===0||d.getDay()===6||HOLIDAYS_2026.has($('#date').value)}
+const HOLIDAYS_2026=new Set(['2026-01-01','2026-02-14','2026-02-15','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-21','2026-02-22','2026-02-28','2026-04-03','2026-04-04','2026-04-05','2026-04-06','2026-05-01','2026-06-19','2026-09-25','2026-09-26','2026-09-27','2026-09-28','2026-10-09','2026-10-10','2026-10-11','2026-10-25','2026-10-26','2026-12-25']);
+function matchScheme(t,s){if(!eligiblePayment(t,s)||isExcluded(t))return null;switch(s){
+ case'天天刷':return ['convenience','grocery','rail','taxi','fuel','drugstore'].includes(t.category)&&!(t.category==='convenience'&&t.payment!=='台新Pay')?.033:null;
+ case'大筆刷':return ['department','home','fashion'].includes(t.category)?.033:null;
+ case'好饗刷':return ['restaurant','delivery','ticket','hotel','ktv'].includes(t.category)?.033:null;
+ case'數趣刷':return ['ecommerce','course','digital'].includes(t.category)?.033:null;
+ case'玩旅刷':return t.region==='overseas'||['airline','booking','travelagency'].includes(t.category)?.033:null;
+ case'Pay著刷':if(t.payment==='台新Pay')return .038;if(['LINE Pay','全盈+Pay'].includes(t.payment)&&t.region==='tw'&&t.category!=='convenience')return .023;return null;
+ case'假日刷':return isHoliday()&&t.category!=='convenience'?.02:null;
+ case'Chill刷':{const date=$('#date').value;if(date<'2026-07-08'||date>'2026-09-30')return null;if(t.category==='chill10')return .10;if(t.category==='chill5')return .05;if(t.category==='chill33')return .033;return null}
+ }}
+function calcScheme(s){let points=0,detail=[];for(const t of state.tx){let r=matchScheme(t,s);if(r==null)r=generalRate(t);let p=floorPoint(t.amount,r);if(s==='Pay著刷'&&t.payment==='LINE Pay'&&$('#lineCoupon').checked&&$('#lineBound').checked&&t.region==='tw'&&!isExcluded(t)){p+=floorPoint(t.amount,.015)}points+=p;detail.push({merchant:t.merchant,rate:r,points:p})}return{scheme:s,points,detail}}
+$('#calcBtn').onclick=()=>{if(!state.tx.length)return alert('請先新增交易');const schemes=['天天刷','大筆刷','好饗刷','數趣刷','玩旅刷','Pay著刷','假日刷','Chill刷'];const rows=schemes.map(calcScheme).sort((a,b)=>b.points-a.points);const best=rows[0].points;const winners=rows.filter(x=>x.points===best).map(x=>x.scheme).join('、');const total=state.tx.reduce((a,t)=>a+t.amount,0);$('#result').className='';$('#result').innerHTML=`<section class="card best"><h2>最佳方案：${winners}</h2><div style="font-size:30px;font-weight:800">${fmt(best)} 點</div><div class="small">今日 ${state.tx.length} 筆｜消費淨額 NT$${fmt(total)}</div></section><section class="card"><h2>各方案預估回饋</h2>${rows.map((r,i)=>`<div class="rank"><div>${i+1}</div><div><b>${r.scheme}</b></div><div class="pts">${fmt(r.points)} 點</div></div>`).join('')}<details><summary>查看逐筆估算</summary>${rows.map(r=>`<h3 style="font-size:14px">${r.scheme}</h3>${r.detail.map(d=>`<div class="small">${esc(d.merchant)}：${(d.rate*100).toFixed(1)}% → ${d.points}點</div>`).join('')}`).join('')}</details></section><section class="card"><button class="primary" onclick="location.href='https://richartlife.taishinbank.com.tw/'">開啟 Richart Life</button></section>`;$('#result').scrollIntoView({behavior:'smooth'})};
+$('#clearBtn').onclick=()=>{if(confirm('清空目前交易？')){state.tx=[];renderTx();save();$('#result').className='hidden'}};
+function save(){localStorage.setItem('richartTx',JSON.stringify({date:$('#date').value,tx:state.tx}))}function load(){try{const x=JSON.parse(localStorage.getItem('richartTx'));if(x&&x.date===$('#date').value)state.tx=x.tx||[]}catch{}renderTx()}
+$('#date').onchange=()=>{state.tx=[];load()};load();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>
